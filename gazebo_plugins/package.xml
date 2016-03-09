@@ -19,7 +19,8 @@
 
   <build_depend>gazebo_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>libgazebo5-dev</build_depend>
+ <!-- <build_depend>libgazebo5-dev</build_depend> -->
+  <build_depend>gazebo</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>trajectory_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
@@ -50,7 +51,7 @@
     Need to use libgazebo5-dev since run script needs pkg-config
     See: https://github.com/ros-simulation/gazebo_ros_pkgs/issues/323 for more info
   -->
-  <run_depend>libgazebo5-dev</run_depend>
+ <!-- <run_depend>libgazebo5-dev</run_depend> -->
   <run_depend>sensor_msgs</run_depend>
   <run_depend>trajectory_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
