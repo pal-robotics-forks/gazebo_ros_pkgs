@@ -150,7 +150,7 @@ void VelocityJoint::init(const std::string&           resource_name,
   }
 
   // PID spec (optional)
-  const ros::NodeHandle pid_nh(nh, "velocity/pid_gains/" + resource_name);
+  const ros::NodeHandle pid_nh(nh, "velocity/gains/" + resource_name);
   pid_.reset(new control_toolbox::Pid());
   const bool has_pid = pid_->init(pid_nh, true); // true == quiet
   if (has_pid)
