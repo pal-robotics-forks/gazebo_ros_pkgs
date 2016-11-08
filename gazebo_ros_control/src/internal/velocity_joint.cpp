@@ -167,7 +167,7 @@ void VelocityJoint::init(const std::string&           resource_name,
     pid_.reset();
 
     // needed when using joint->setPosition() or joint->setVelocity(), not when using joint->SetForce()
-    sim_joint_->SetMaxForce(0, eff_max_);  // TODO: Move to start hook
+    //sim_joint_->SetMaxForce(0, eff_max_);  // TODO: Move to start hook
   }
 }
 

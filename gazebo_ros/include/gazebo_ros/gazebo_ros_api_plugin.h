@@ -361,6 +361,8 @@ private:
   dynamic_reconfigure::Server<gazebo_ros::PhysicsConfig>::CallbackType physics_reconfigure_callback_;
 
   ros::Publisher     pub_clock_;
+  int pub_clock_frequency_;
+  gazebo::common::Time last_pub_clock_time_;
 
   /// \brief A mutex to lock access to fields that are used in ROS message callbacks
   boost::mutex lock_;
@@ -388,7 +390,9 @@ private:
 
   std::vector<GazeboRosApiPlugin::WrenchBodyJob*> wrench_body_jobs_;
   std::vector<GazeboRosApiPlugin::ForceJointJob*> force_joint_jobs_;
-
+  
+  /// \brief index counters to count the accesses on models via GetModelState
+  std::map<std::string, unsigned int> access_count_get_model_state_; 
 };
 }
 #endif

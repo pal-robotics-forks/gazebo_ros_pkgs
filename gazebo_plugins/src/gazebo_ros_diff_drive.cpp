@@ -85,6 +85,18 @@ void GazeboRosDiffDrive::Load ( physics::ModelPtr _parent, sdf::ElementPtr _sdf 
     gazebo_ros_->getParameter<std::string> ( robot_base_frame_, "robotBaseFrame", "base_footprint" );
     gazebo_ros_->getParameterBoolean ( publishWheelTF_, "publishWheelTF", false );
     gazebo_ros_->getParameterBoolean ( publishWheelJointState_, "publishWheelJointState", false );
+    gazebo_ros_->getParameterBoolean ( legacy_mode_, "legacyMode", true );
+    
+    if (!_sdf->HasElement("legacyMode")) 
+    {
+      ROS_ERROR("GazeboRosDiffDrive Plugin missing <legacyMode>, defaults to true\n" 
+	       "This setting assumes you have a old package, where the right and left wheel are changed to fix a former code issue\n"
+	       "To get rid of this error just set <legacyMode> to false if you just created a new package.\n"
+	       "To fix an old package you have to exchange left wheel by the right wheel.\n"
+	       "If you do not want to fix this issue in an old package or your z axis points down instead of the ROS standard defined in REP 103\n"
+	       "just set <legacyMode> to true.\n"
+      );
+    }
 
     gazebo_ros_->getParameter<double> ( wheel_separation_, "wheelSeparation", 0.34 );
     gazebo_ros_->getParameter<double> ( wheel_diameter_, "wheelDiameter", 0.15 );
@@ -100,8 +112,13 @@ void GazeboRosDiffDrive::Load ( physics::ModelPtr _parent, sdf::ElementPtr _sdf 
     joints_.resize ( 2 );
     joints_[LEFT] = gazebo_ros_->getJoint ( parent, "leftJoint", "left_joint" );
     joints_[RIGHT] = gazebo_ros_->getJoint ( parent, "rightJoint", "right_joint" );
+#if GAZEBO_MAJOR_VERSION > 2
+    joints_[LEFT]->SetParam ( "fmax", 0, wheel_torque );
+    joints_[RIGHT]->SetParam ( "fmax", 0, wheel_torque );
+#else
     joints_[LEFT]->SetMaxForce ( 0, wheel_torque );
     joints_[RIGHT]->SetMaxForce ( 0, wheel_torque );
+#endif
 
 
 
@@ -121,6 +138,10 @@ void GazeboRosDiffDrive::Load ( physics::ModelPtr _parent, sdf::ElementPtr _sdf 
     // Initialize velocity stuff
     wheel_speed_[RIGHT] = 0;
     wheel_speed_[LEFT] = 0;
+
+    // Initialize velocity support stuff
+    wheel_speed_instr_[RIGHT] = 0;
+    wheel_speed_instr_[LEFT] = 0;
 
     x_ = 0;
     rot_ = 0;
@@ -170,8 +191,13 @@ void GazeboRosDiffDrive::Reset()
   pose_encoder_.theta = 0;
   x_ = 0;
   rot_ = 0;
+#if GAZEBO_MAJOR_VERSION > 2
+  joints_[LEFT]->SetParam ( "fmax", 0, wheel_torque );
+  joints_[RIGHT]->SetParam ( "fmax", 0, wheel_torque );
+#else
   joints_[LEFT]->SetMaxForce ( 0, wheel_torque );
   joints_[RIGHT]->SetMaxForce ( 0, wheel_torque );
+#endif
 }
 
 void GazeboRosDiffDrive::publishWheelJointState()
@@ -214,15 +240,20 @@ void GazeboRosDiffDrive::publishWheelTF()
 void GazeboRosDiffDrive::UpdateChild()
 {
   
-    /* force reset SetMaxForce since Joint::Reset reset MaxForce to zero at
+    /* force reset SetParam("fmax") since Joint::Reset reset MaxForce to zero at
        https://bitbucket.org/osrf/gazebo/src/8091da8b3c529a362f39b042095e12c94656a5d1/gazebo/physics/Joint.cc?at=gazebo2_2.2.5#cl-331
        (this has been solved in https://bitbucket.org/osrf/gazebo/diff/gazebo/physics/Joint.cc?diff2=b64ff1b7b6ff&at=issue_964 )
        and Joint::Reset is called after ModelPlugin::Reset, so we need to set maxForce to wheel_torque other than GazeboRosDiffDrive::Reset
        (this seems to be solved in https://bitbucket.org/osrf/gazebo/commits/ec8801d8683160eccae22c74bf865d59fac81f1e)
     */
     for ( int i = 0; i < 2; i++ ) {
+#if GAZEBO_MAJOR_VERSION > 2
+      if ( fabs(wheel_torque -joints_[i]->GetParam ( "fmax", 0 )) > 1e-6 ) {
+        joints_[i]->SetParam ( "fmax", 0, wheel_torque );
+#else
       if ( fabs(wheel_torque -joints_[i]->GetMaxForce ( 0 )) > 1e-6 ) {
         joints_[i]->SetMaxForce ( 0, wheel_torque );
+#endif
       }
     }
 
@@ -248,8 +279,13 @@ void GazeboRosDiffDrive::UpdateChild()
                 ( fabs ( wheel_speed_[LEFT] - current_speed[LEFT] ) < 0.01 ) ||
                 ( fabs ( wheel_speed_[RIGHT] - current_speed[RIGHT] ) < 0.01 ) ) {
             //if max_accel == 0, or target speed is reached
+#if GAZEBO_MAJOR_VERSION > 2
+            joints_[LEFT]->SetParam ( "vel", 0, wheel_speed_[LEFT]/ ( wheel_diameter_ / 2.0 ) );
+            joints_[RIGHT]->SetParam ( "vel", 0, wheel_speed_[RIGHT]/ ( wheel_diameter_ / 2.0 ) );
+#else
             joints_[LEFT]->SetVelocity ( 0, wheel_speed_[LEFT]/ ( wheel_diameter_ / 2.0 ) );
             joints_[RIGHT]->SetVelocity ( 0, wheel_speed_[RIGHT]/ ( wheel_diameter_ / 2.0 ) );
+#endif
         } else {
             if ( wheel_speed_[LEFT]>=current_speed[LEFT] )
                 wheel_speed_instr_[LEFT]+=fmin ( wheel_speed_[LEFT]-current_speed[LEFT],  wheel_accel * seconds_since_last_update );
@@ -264,8 +300,13 @@ void GazeboRosDiffDrive::UpdateChild()
             // ROS_INFO("actual wheel speed = %lf, issued wheel speed= %lf", current_speed[LEFT], wheel_speed_[LEFT]);
             // ROS_INFO("actual wheel speed = %lf, issued wheel speed= %lf", current_speed[RIGHT],wheel_speed_[RIGHT]);
 
+#if GAZEBO_MAJOR_VERSION > 2
+            joints_[LEFT]->SetParam ( "vel", 0, wheel_speed_instr_[LEFT] / ( wheel_diameter_ / 2.0 ) );
+            joints_[RIGHT]->SetParam ( "vel", 0, wheel_speed_instr_[RIGHT] / ( wheel_diameter_ / 2.0 ) );
+#else
             joints_[LEFT]->SetVelocity ( 0,wheel_speed_instr_[LEFT] / ( wheel_diameter_ / 2.0 ) );
             joints_[RIGHT]->SetVelocity ( 0,wheel_speed_instr_[RIGHT] / ( wheel_diameter_ / 2.0 ) );
+#endif
         }
         last_update_time_+= common::Time ( update_period_ );
     }
@@ -288,8 +329,16 @@ void GazeboRosDiffDrive::getWheelVelocities()
     double vr = x_;
     double va = rot_;
 
-    wheel_speed_[LEFT] = vr + va * wheel_separation_ / 2.0;
-    wheel_speed_[RIGHT] = vr - va * wheel_separation_ / 2.0;
+    if(legacy_mode_)
+    {
+      wheel_speed_[LEFT] = vr + va * wheel_separation_ / 2.0;
+      wheel_speed_[RIGHT] = vr - va * wheel_separation_ / 2.0;     
+    }
+    else
+    {
+      wheel_speed_[LEFT] = vr - va * wheel_separation_ / 2.0;
+      wheel_speed_[RIGHT] = vr + va * wheel_separation_ / 2.0;      
+    }
 }
 
 void GazeboRosDiffDrive::cmdVelCallback ( const geometry_msgs::Twist::ConstPtr& cmd_msg )
@@ -321,12 +370,22 @@ void GazeboRosDiffDrive::UpdateOdometryEncoder()
     // Book: Sigwart 2011 Autonompus Mobile Robots page:337
     double sl = vl * ( wheel_diameter_ / 2.0 ) * seconds_since_last_update;
     double sr = vr * ( wheel_diameter_ / 2.0 ) * seconds_since_last_update;
-    double theta = ( sl - sr ) /b;
-
-
-    double dx = ( sl + sr ) /2.0 * cos ( pose_encoder_.theta + ( sl - sr ) / ( 2.0*b ) );
-    double dy = ( sl + sr ) /2.0 * sin ( pose_encoder_.theta + ( sl - sr ) / ( 2.0*b ) );
-    double dtheta = ( sl - sr ) /b;
+    double ssum = sl + sr; 
+    
+    double sdiff;
+    if(legacy_mode_)
+    {
+      sdiff = sl - sr;
+    }
+    else
+    {
+      
+      sdiff = sr - sl;
+    }
+    
+    double dx = ( ssum ) /2.0 * cos ( pose_encoder_.theta + ( sdiff ) / ( 2.0*b ) );
+    double dy = ( ssum ) /2.0 * sin ( pose_encoder_.theta + ( sdiff ) / ( 2.0*b ) );
+    double dtheta = ( sdiff ) /b;
 
     pose_encoder_.x += dx;
     pose_encoder_.y += dy;

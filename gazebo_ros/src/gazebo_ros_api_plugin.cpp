@@ -22,7 +22,7 @@
 
 #include <gazebo/common/Events.hh>
 #include <gazebo/gazebo_config.h>
-#include "gazebo_ros_api_plugin.h"
+#include <gazebo_ros/gazebo_ros_api_plugin.h>
 
 namespace gazebo
 {
@@ -33,7 +33,8 @@ GazeboRosApiPlugin::GazeboRosApiPlugin() :
   stop_(false),
   plugin_loaded_(false),
   pub_link_states_connection_count_(0),
-  pub_model_states_connection_count_(0)
+  pub_model_states_connection_count_(0),
+  pub_clock_frequency_(0)
 {
   robot_namespace_.clear();
 }
@@ -54,6 +55,7 @@ GazeboRosApiPlugin::~GazeboRosApiPlugin()
   }
 
   // Disconnect slots
+  gazebo::event::Events::DisconnectWorldCreated(load_gazebo_ros_api_plugin_event_);
   gazebo::event::Events::DisconnectWorldUpdateBegin(wrench_update_event_);
   gazebo::event::Events::DisconnectWorldUpdateBegin(force_update_event_);
   gazebo::event::Events::DisconnectWorldUpdateBegin(time_update_event_);
@@ -157,7 +159,6 @@ void GazeboRosApiPlugin::Load(int argc, char** argv)
 void GazeboRosApiPlugin::loadGazeboRosApiPlugin(std::string world_name)
 {
   // make sure things are only called once
-  gazebo::event::Events::DisconnectWorldCreated(load_gazebo_ros_api_plugin_event_);
   lock_.lock();
   if (world_created_)
   {
@@ -482,7 +483,8 @@ void GazeboRosApiPlugin::advertiseServices()
   nh_->setParam("/use_sim_time", true);
 
   // todo: contemplate setting environment variable ROBOT=sim here???
-
+  nh_->getParam("pub_clock_frequency", pub_clock_frequency_);
+  last_pub_clock_time_ = world_->GetSimTime();
 }
 
 void GazeboRosApiPlugin::onLinkStatesConnect()
@@ -577,7 +579,7 @@ bool GazeboRosApiPlugin::spawnURDFModel(gazebo_msgs::SpawnModel::Request &req,
       ROS_DEBUG_ONCE("Package name [%s] has path [%s]", package_name.c_str(), package_path.c_str());
 
       model_xml.replace(pos1,(pos2-pos1),package_path);
-      pos1 = model_xml.find(package_prefix,0);
+      pos1 = model_xml.find(package_prefix, pos1);
     }
   }
   // ROS_DEBUG("Model XML\n\n%s\n\n ",model_xml.c_str());
@@ -593,7 +595,7 @@ bool GazeboRosApiPlugin::spawnGazeboModel(gazebo_msgs::SpawnModel::Request &req,
                                           gazebo_msgs::SpawnModel::Response &res)
 {
   ROS_WARN_STREAM_NAMED("api_plugin","/gazebo/spawn_gazebo_model is deprecated, use /gazebo/spawn_sdf_model instead");
-  return spawnSDFModel(req, res);
+  spawnSDFModel(req, res);
 }
 
 bool GazeboRosApiPlugin::spawnSDFModel(gazebo_msgs::SpawnModel::Request &req,
@@ -776,6 +778,26 @@ bool GazeboRosApiPlugin::getModelState(gazebo_msgs::GetModelState::Request &req,
   }
   else
   {
+     /**
+     * @brief creates a header for the result
+     * @author Markus Bader markus.bader@tuwien.ac.at
+     * @date 21th Nov 2014
+     **/
+    {
+      std::map<std::string, unsigned int>::iterator it = access_count_get_model_state_.find(req.model_name);
+      if(it == access_count_get_model_state_.end()) 
+      {
+        access_count_get_model_state_.insert( std::pair<std::string, unsigned int>(req.model_name, 1) );
+        res.header.seq = 1;
+      } 
+      else 
+      {
+        it->second++;
+        res.header.seq = it->second;
+      }
+      res.header.stamp = ros::Time::now();
+      res.header.frame_id = req.relative_entity_name; /// @brief this is a redundant information
+    }
     // get model pose
     gazebo::math::Pose       model_pose = model->GetWorldPose();
     gazebo::math::Vector3    model_pos = model_pose.pos;
@@ -1045,7 +1067,7 @@ bool GazeboRosApiPlugin::getLinkState(gazebo_msgs::GetLinkState::Request &req,
   res.link_state.twist.linear.z = body_vpos.z;
   res.link_state.twist.angular.x = body_veul.x;
   res.link_state.twist.angular.y = body_veul.y;
-  res.link_state.twist.angular.z = body_veul.x;
+  res.link_state.twist.angular.z = body_veul.z;
   res.link_state.reference_frame = req.reference_frame;
 
   res.success = true;
@@ -1780,18 +1802,28 @@ void GazeboRosApiPlugin::forceJointSchedulerSlot()
 void GazeboRosApiPlugin::publishSimTime(const boost::shared_ptr<gazebo::msgs::WorldStatistics const> &msg)
 {
   ROS_ERROR("CLOCK2");
+  gazebo::common::Time sim_time = world_->GetSimTime();
+  if (pub_clock_frequency_ > 0 && (sim_time - last_pub_clock_time_).Double() < 1.0/pub_clock_frequency_)
+    return;
+
   gazebo::common::Time currentTime = gazebo::msgs::Convert( msg->sim_time() );
   rosgraph_msgs::Clock ros_time_;
   ros_time_.clock.fromSec(currentTime.Double());
   //  publish time to ros
+  last_pub_clock_time_ = sim_time;
   pub_clock_.publish(ros_time_);
 }
 void GazeboRosApiPlugin::publishSimTime()
 {
+  gazebo::common::Time sim_time = world_->GetSimTime();
+  if (pub_clock_frequency_ > 0 && (sim_time - last_pub_clock_time_).Double() < 1.0/pub_clock_frequency_)
+    return;
+
   gazebo::common::Time currentTime = world_->GetSimTime();
   rosgraph_msgs::Clock ros_time_;
   ros_time_.clock.fromSec(currentTime.Double());
   //  publish time to ros
+  last_pub_clock_time_ = sim_time;
   pub_clock_.publish(ros_time_);
 }
 
