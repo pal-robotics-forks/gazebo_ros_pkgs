@@ -56,6 +56,7 @@ namespace
  */
 std::map<std::string, std::vector<std::string> > getResources(const std::list<hardware_interface::ControllerInfo>& ctrls)
 {
+
   std::map<std::string, std::vector<std::string> > out;
   BOOST_FOREACH(const hardware_interface::ControllerInfo& ctrl, ctrls)
   {
@@ -226,9 +227,10 @@ void DefaultRobotHWSim::eStopActive(const bool active)
   e_stop_active_ = active;
 }
 
-bool DefaultRobotHWSim::canSwitch(const std::list<hardware_interface::ControllerInfo>& start_list,
-                                  const std::list<hardware_interface::ControllerInfo>& stop_list) const
+bool DefaultRobotHWSim::prepareSwitch(const std::list<hardware_interface::ControllerInfo>& start_list,
+                                  const std::list<hardware_interface::ControllerInfo>& stop_list)
 {
+
   using std::list;
   using std::map;
   using std::string;
