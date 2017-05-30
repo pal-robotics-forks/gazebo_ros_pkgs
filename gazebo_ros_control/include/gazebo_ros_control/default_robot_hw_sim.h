@@ -94,10 +94,10 @@ public:
 
   virtual void eStopActive(const bool active);
 
-  virtual bool canSwitch(const std::list<hardware_interface::ControllerInfo>&start_list,
-                         const std::list<hardware_interface::ControllerInfo>& stop_list) const;
+  virtual bool prepareSwitch(const std::list<hardware_interface::ControllerInfo>&start_list,
+                         const std::list<hardware_interface::ControllerInfo>& stop_list) override;
   virtual void doSwitch(const std::list<hardware_interface::ControllerInfo>& start_list,
-                        const std::list<hardware_interface::ControllerInfo>& stop_list);
+                        const std::list<hardware_interface::ControllerInfo>& stop_list) override;
 
 protected:
 

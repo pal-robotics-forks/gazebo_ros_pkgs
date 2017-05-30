@@ -56,12 +56,16 @@ namespace
  */
 std::map<std::string, std::vector<std::string> > getResources(const std::list<hardware_interface::ControllerInfo>& ctrls)
 {
+
   std::map<std::string, std::vector<std::string> > out;
   BOOST_FOREACH(const hardware_interface::ControllerInfo& ctrl, ctrls)
   {
-    BOOST_FOREACH(const std::string& name, ctrl.resources)
-    {
-      out[name] = std::vector<std::string>(1, ctrl.hardware_interface);
+    BOOST_FOREACH(const hardware_interface::InterfaceResources &interface_resource, ctrl.claimed_resources){
+
+      BOOST_FOREACH(const std::string& name, interface_resource.resources)
+      {
+        out[name] = std::vector<std::string>(1, interface_resource.hardware_interface);
+      }
     }
   }
   return out;
@@ -106,11 +110,11 @@ namespace gazebo_ros_control
 {
 
 bool DefaultRobotHWSim::initSim(
-  const std::string& robot_namespace,
-  ros::NodeHandle model_nh,
-  gazebo::physics::ModelPtr parent_model,
-  const urdf::Model *const urdf_model,
-  std::vector<transmission_interface::TransmissionInfo> transmissions)
+    const std::string& robot_namespace,
+    ros::NodeHandle model_nh,
+    gazebo::physics::ModelPtr parent_model,
+    const urdf::Model *const urdf_model,
+    std::vector<transmission_interface::TransmissionInfo> transmissions)
 {
   // register hardware interfaces
   // TODO: Automate, so generic interfaces can be added
@@ -223,9 +227,10 @@ void DefaultRobotHWSim::eStopActive(const bool active)
   e_stop_active_ = active;
 }
 
-bool DefaultRobotHWSim::canSwitch(const std::list<hardware_interface::ControllerInfo>& start_list,
-                                  const std::list<hardware_interface::ControllerInfo>& stop_list) const
+bool DefaultRobotHWSim::prepareSwitch(const std::list<hardware_interface::ControllerInfo>& start_list,
+                                  const std::list<hardware_interface::ControllerInfo>& stop_list)
 {
+
   using std::list;
   using std::map;
   using std::string;
