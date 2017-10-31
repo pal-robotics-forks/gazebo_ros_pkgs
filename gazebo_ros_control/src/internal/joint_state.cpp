@@ -99,7 +99,7 @@ void JointState::init(const std::string&           resource_name,
   }
 
   // register resource in ros_control hardware interface
-  hi::JointStateHandle js_handle(resource_name, &pos_, &vel_, &eff_);
+  hi::JointStateHandle js_handle(resource_name, &pos_, &vel_, &eff_, &pos_, &eff_);
   js_iface->registerHandle(js_handle);
 }
 
