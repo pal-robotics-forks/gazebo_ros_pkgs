@@ -596,6 +596,7 @@ bool GazeboRosApiPlugin::spawnGazeboModel(gazebo_msgs::SpawnModel::Request &req,
 {
   ROS_WARN_STREAM_NAMED("api_plugin","/gazebo/spawn_gazebo_model is deprecated, use /gazebo/spawn_sdf_model instead");
   spawnSDFModel(req, res);
+  return true;
 }
 
 bool GazeboRosApiPlugin::spawnSDFModel(gazebo_msgs::SpawnModel::Request &req,
@@ -785,12 +786,12 @@ bool GazeboRosApiPlugin::getModelState(gazebo_msgs::GetModelState::Request &req,
      **/
     {
       std::map<std::string, unsigned int>::iterator it = access_count_get_model_state_.find(req.model_name);
-      if(it == access_count_get_model_state_.end()) 
+      if(it == access_count_get_model_state_.end())
       {
         access_count_get_model_state_.insert( std::pair<std::string, unsigned int>(req.model_name, 1) );
         res.header.seq = 1;
-      } 
-      else 
+      }
+      else
       {
         it->second++;
         res.header.seq = it->second;
