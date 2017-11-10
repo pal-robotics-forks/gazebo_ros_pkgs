@@ -44,6 +44,7 @@
 
 #include <gazebo_ros_control/gazebo_ros_control_plugin.h>
 #include <urdf/model.h>
+#include <dynamic_introspection/DynamicIntrospection.h>
 
 namespace gazebo_ros_control
 {
@@ -242,6 +243,8 @@ void GazeboRosControlPlugin::Update()
   // computation
   robot_hw_sim_->writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros_);
   last_write_sim_time_ros_ = sim_time_ros;
+
+  PUBLISH_DEBUG_DATA_TOPIC;
 }
 
 // Called on world reset

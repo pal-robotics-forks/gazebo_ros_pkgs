@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   joint_limits_interface
   urdf
   angles
+  dynamic_introspection
 )
 
 # Depend on system install of Gazebo 
