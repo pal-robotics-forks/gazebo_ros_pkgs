@@ -2,6 +2,9 @@
 Changelog for package gazebo_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.0.1 (2023-03-29)
 ------------------
 * Merge branch 'mlu/fix/gazebo-dev-export' into 'gallium-devel'

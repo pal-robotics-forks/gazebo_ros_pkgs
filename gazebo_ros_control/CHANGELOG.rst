@@ -2,6 +2,14 @@
 Changelog for package gazebo_ros_control
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'fix/gazebo-ros-control-build-dep' into 'gallium-devel'
+  Fix build_depend on gazebo in gazebo_ros_control
+  See merge request common/gazebo_ros_pkgs!8
+* Fix build_depend on gazebo in gazebo_ros_control
+* Contributors: Jordan Palacios, Mathias Lüdtke
+
 4.0.1 (2023-03-29)
 ------------------
 
