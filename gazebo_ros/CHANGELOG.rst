@@ -2,6 +2,11 @@
 Changelog for package gazebo_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2025-02-11)
+------------------
+* Add build_export_depend on gazebo_dev
+* Contributors: Mathias Lüdtke
+
 3.0.1 (2019-11-05)
 ------------------
 * Fix shadowed variables

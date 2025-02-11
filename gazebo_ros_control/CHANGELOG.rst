@@ -2,6 +2,11 @@
 Changelog for package gazebo_ros_control
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2025-02-11)
+------------------
+* Fix build_depend on gazebo in gazebo_ros_control
+* Contributors: Mathias Lüdtke
+
 3.0.1 (2019-11-05)
 ------------------
 
