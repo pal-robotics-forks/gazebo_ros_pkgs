@@ -2,8 +2,8 @@
 Changelog for package gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.3 (2025-03-03)
+------------------
 * Add missing test_depend on gazebo_ros
 * Contributors: Mathias Lüdtke
 
