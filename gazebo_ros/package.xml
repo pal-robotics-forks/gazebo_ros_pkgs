@@ -29,6 +29,7 @@
     See: https://github.com/ros-simulation/gazebo_ros_pkgs/issues/323 for more info
   -->
   <exec_depend>gazebo_dev</exec_depend>
+  <exec_depend>libgazebo9-dev</exec_depend>
   <depend>gazebo_msgs</depend>
   <depend>roslib</depend>
   <depend>roscpp</depend>
