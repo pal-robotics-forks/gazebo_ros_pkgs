@@ -2,6 +2,13 @@
 Changelog for package gazebo_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Revert "Add build_export_depend on gazebo_dev"
+  This reverts commit 749384a8d5337ebf4841ff01c6eddfd5a9302683
+* Make gazebo_ros pull in pkgconfig for gazebo
+* Contributors: Mathias Lüdtke
+
 3.0.3 (2025-03-03)
 ------------------
 
